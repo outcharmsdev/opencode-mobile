@@ -61,16 +61,16 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /*
- * The cl0udly look. The mascot is the cloud from the official icon (the author's drawing): a white body,
- * grey steps, two tall eyes. The sky above the bar is a still pixel ridge
+ * The Puffi look: a lilac pixel cloud, spiral tuft, pink cheeks and two tall eyes.
+ * The sky above the bar is a still pixel ridge
  * in blue tones, dense on the left and thinning to the right, darkened toward the background.
  */
 
 // ---------- mascot ----------
 
-// icon geometry in its original units (cloud 748 × 428)
+// Preserve the interaction coordinate scale with Puffi's 48:36 aspect ratio.
 internal const val CW = 748f
-internal const val CH = 428f
+internal const val CH = 561f
 private val WHITE = Color(0xFFFFFFFF)
 private val GREY = Color(0xFFBABABC)
 internal val INK = Color(0xFF18181A)
@@ -90,25 +90,14 @@ internal fun DrawScope.drawIconCloud(
     // instead of rearranging a pixel here and there
     val x0r = x.roundToInt(); val y0r = y.roundToInt()
     fun sx(v: Float) = (x0r + (v * k).roundToInt()).toFloat()
-    fun sy(v: Float) = (y0r + (v * k).roundToInt()).toFloat()
+    fun sy(v: Float) = (y0r + ((260f + (v - 110f) * 0.52f) * k).roundToInt()).toFloat()
     fun r(x0: Float, y0: Float, x1: Float, y1: Float, col: Color) =
         drawRect(col, Offset(sx(x0), sy(y0)), Size(sx(x1) - sx(x0), sy(y1) - sy(y0)))
-    // on a light background: a dark outline around the cloud
-    if (outline != null) {
-        val o = 22f
-        r(-o, 113f - o, CW + o, CH + o, outline)
-        r(152f - o, -o, 635f + o, 113f, outline)
-    }
-    r(0f, 113f, CW, CH, WHITE)
-    r(152f, 0f, 565f, 114f, WHITE)
-    r(565f, 0f, 635f, 113f, GREY)
-    r(635f, 113f, 704f, 193f, GREY)
-    r(0f, 213f, 62f, CH, GREY)
-    r(62f, 333f, 127f, CH, GREY)
+    PuffiArt.draw(this, x0r.toFloat(), y0r.toFloat(), w)
 
-    val ew = 72f; val eh = 214f; val top = 110f + eyeDy * CW
+    val ew = 48f; val eh = 214f; val top = 110f + eyeDy * CW
     val dx = eyeDx * CW
-    listOf(245f, 430f).forEachIndexed { i, ex0 ->
+    listOf(280f, 435f).forEachIndexed { i, ex0 ->
         val ex = ex0 + if (mood == CloudMood.Idle || mood == CloudMood.Wink || mood == CloudMood.Surprised || mood == CloudMood.Rain) dx else 0f
         when (mood) {
             CloudMood.Idle -> {
@@ -156,12 +145,6 @@ internal fun DrawScope.drawIconCloud(
                 r(ex + ew / 2 - 8f, top + eh + 10f, ex + ew / 2 + 8f, top + eh + 42f, Color(LILAC))
             }
         }
-    }
-    // blush: soft lilac cheeks when it's happy, winking or being petted
-    if (mood == CloudMood.Happy || mood == CloudMood.Wink || mood == CloudMood.Love) {
-        val cy = top + eh - 4f
-        r(178f, cy, 238f, cy + 34f, Color(LILAC))
-        r(510f, cy, 570f, cy + 34f, Color(LILAC))
     }
 }
 
@@ -396,12 +379,14 @@ fun PixelCloud(modifier: Modifier, thinking: Boolean = false, interactive: Boole
     val down by androidx.compose.animation.core.animateFloatAsState(if (watching) 1f else 0f, tween(200), label = "down")
     val tiltA by androidx.compose.animation.core.animateFloatAsState(tilt, tween(150), label = "tilt")
     val bob by t.animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = androidx.compose.animation.core.FastOutSlowInEasing), RepeatMode.Reverse), label = "bob")
+    val breathe by t.animateFloat(0.98f, 1.02f, infiniteRepeatable(tween(1800), RepeatMode.Reverse), label = "puffi-breathe")
     val night = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) in 0..4 }
 
     Canvas(
         modifier
             .graphicsLayer {
-                scaleX = (2f - squash.value) * flip.value; scaleY = squash.value
+                scaleX = (2f - squash.value) * flip.value / breathe; scaleY = squash.value * breathe
+                rotationZ = if (mood == CloudMood.Sleep) 0f else (bob - 0.5f) * 4f
                 translationX = shake.value * size.width + pullX.value * size.width
                 translationY = pullY.value * size.height + jump.value * size.height
                 transformOrigin = TransformOrigin(0.5f, 0.75f)
@@ -535,7 +520,7 @@ fun PixelCloud(modifier: Modifier, thinking: Boolean = false, interactive: Boole
             else -> (lookT * 0.03f + tiltA * 0.03f + dartX.value * 0.035f).coerceIn(-0.045f, 0.045f)
         }
         drawIconCloud(
-            x, y, w, shown, eyeDx, if (blinkT > 0.5f && tl == null) 1f else 0f, if (c.isDark) c.bg else INK,
+            x, y, w, shown, eyeDx, if (blinkT > 0.5f && tl == null) 1f else 0f, INK,
             eyeDy = if (tl != null) tl.y * 0.05f else if (listening) 0.07f else down * 0.07f + dartY.value * 0.04f, outline = if (c.isDark) null else INK,
         )
 
@@ -812,6 +797,9 @@ object CloudBackdrop {
 
 // 5×9 pixel letters for "cl0udly"
 private val GLYPHS = mapOf(
+    'P' to listOf("####.", "#...#", "#...#", "####.", "#....", "#....", "#....", "#....", "....."),
+    'f' to listOf("..##.", ".#...", "###..", ".#...", ".#...", ".#...", ".#...", ".#...", "....."),
+    'i' to listOf(".#...", ".....", "##...", ".#...", ".#...", ".#...", ".#...", "###..", "....."),
     'c' to listOf(".....", ".....", ".###.", "#...#", "#....", "#....", "#...#", ".###.", "....."),
     'l' to listOf("##...", ".#...", ".#...", ".#...", ".#...", ".#...", ".#...", "###..", "....."),
     '0' to listOf(".###.", "#...#", "#..##", "#.#.#", "#.#.#", "##..#", "#...#", ".###.", "....."),
@@ -890,11 +878,11 @@ internal fun CloudIntro(t: Float, exit: Float = 0f) {
         if (mAlpha > 0f) {
             val layer = androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height)
             drawContext.canvas.saveLayer(layer, androidx.compose.ui.graphics.Paint().apply { alpha = mAlpha })
-            drawIconCloud((size.width - wNow) / 2, yNow, wNow, if (e > 0f) CloudMood.Idle else mood, eyeDx, blink, c.bg)
+            drawIconCloud((size.width - wNow) / 2, yNow, wNow, if (e > 0f) CloudMood.Idle else mood, eyeDx, blink, INK)
             drawContext.canvas.restore()
         }
 
-        val word = "cl0udly"
+        val word = "Puffi"
         val shown = ((t - 0.5f) / 0.3f).coerceIn(0f, 1f) * word.length
         val wa = (1f - e * 2f).coerceIn(0f, 1f)
         if (wa > 0f) drawPixelWord(word, ((size.width - wordWidth(word) * px) / 2).roundToInt().toFloat(), bankTop + (gh + 6) * px + e * 60f, px, shown, c.text.copy(alpha = wa), c.accent.copy(alpha = wa))

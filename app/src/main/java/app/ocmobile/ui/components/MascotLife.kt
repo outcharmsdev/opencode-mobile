@@ -39,7 +39,10 @@ enum class Holiday(val outfit: List<String>?, val anchor: Float, val ambient: Ch
     Spring(SPROUT, 360f, null, 0),
     Summer(SHADES, 360f, null, 0),
     Halloween(WITCH_HAT, 360f, 'b', 1700),
-    Autumn(null, 0f, 'l', 1300, sneezes = true);
+    Autumn(null, 0f, 'l', 1300, sneezes = true),
+    Crown(CROWN, 460f, 's', 2400),
+    Flower(FLOWER, 220f, null, 0),
+    Nightcap(NIGHTCAP, 460f, null, 0);
 
     companion object {
         fun now(): Holiday? {
@@ -76,6 +79,7 @@ enum class Holiday(val outfit: List<String>?, val anchor: Float, val ambient: Ch
         val wardrobe = listOf(
             "Party hat" to NewYear, "Santa hat" to Christmas, "Witch hat" to Halloween, "Green top hat" to Patrick,
             "Bow" to Valentine, "Tulip" to WomensDay, "Sprout" to Spring, "Shades" to Summer,
+            "Coroa" to Crown, "Flor" to Flower, "Gorro de dormir" to Nightcap,
         )
     }
 }
@@ -89,6 +93,9 @@ private val BOW = listOf("pp.pp", "ppppp", "pp.pp")
 private val TULIP = listOf(".p.p.", "ppppp", "ppppp", ".ppp.", "..g..", ".gg..", "..g..")
 private val SPROUT = listOf("gg.gg", ".ggg.", "..g..", "..g..")
 private val SHADES = listOf("kkk.kkk", "kkkkkkk", "kkk.kkk")
+private val CROWN = listOf("y..y..y", "yy.y.yy", "yyyyyyy", ".ypppy.")
+private val FLOWER = listOf(".pp.", "pyyp", "pyyp", ".pp.", "..g.")
+private val NIGHTCAP = listOf("...llw", "..lllw", ".llll.", "lllll.", "wwwww.")
 
 private val OUTFIT_COLORS = mapOf(
     'r' to Color(0xFFD9575B), 'w' to Color(0xFFF4F4F6), 'l' to Color(0xFF9F9DF2), 'p' to Color(0xFFF08DB0),
@@ -99,9 +106,18 @@ private val OUTFIT_COLORS = mapOf(
 internal fun DrawScope.drawOutfit(h: Holiday, x: Float, y: Float, k: Float, step: Float) {
     val pic = h.outfit ?: return
     val wide = pic.maxOf { it.length }
-    val left = x + h.anchor * k - wide * step / 2
+    val anchor = when (h) {
+        Holiday.Summer -> CW * 0.51f
+        Holiday.Valentine, Holiday.Flower -> h.anchor
+        else -> CW * 0.625f
+    }
+    val left = x + anchor * k - wide * step / 2
     // shades sit on the forehead, everything else on top of the head
-    val bottom = if (h == Holiday.Summer) y + step * 2.4f else y + step * 0.4f
+    val bottom = when (h) {
+        Holiday.Summer -> y + 375f * k
+        Holiday.Valentine, Holiday.Flower -> y + 185f * k
+        else -> y + step * 0.4f
+    }
     pic.forEachIndexed { r, row ->
         row.forEachIndexed { cI, ch ->
             OUTFIT_COLORS[ch]?.let { drawRect(it, Offset(left + cI * step, bottom - (pic.size - r) * step), Size(step, step)) }

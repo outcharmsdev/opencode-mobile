@@ -53,7 +53,7 @@ fun MascotSettings(nav: Nav) {
     fun toggle(set: (Boolean) -> Unit): (Boolean) -> Unit = { set(it); rev++ }
 
     Column(Modifier.fillMaxSize().screenBackdrop("MascotSettings")) {
-        TopBar("cl0udly", left = { IconBtn(Ic.Back, { nav.pop() }) })
+        TopBar("Puffi", left = { IconBtn(Ic.Back, { nav.pop() }) })
         key(rev) {
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 32.dp)) {
                 Box(Modifier.fillMaxWidth().height(170.dp), contentAlignment = Alignment.Center) {
@@ -63,7 +63,7 @@ fun MascotSettings(nav: Nav) {
 
                 SettingsGroup {
                     SettingsRow("Show on the home screen", icon = Ic.Cloud, trailing = { OcSwitch(p.mascotOn, toggle { p.mascotOn = it }) })
-                    SettingsRow("Room", subtitle = "Chat with cl0udly and play ping-pong", icon = Ic.Play, chevron = true, onClick = { nav.push(Route.Mascot) })
+                    SettingsRow("Room", subtitle = "Chat with Puffi and play ping-pong", icon = Ic.Play, chevron = true, onClick = { nav.push(Route.Mascot) })
                 }
 
                 SectionLabel("In chats")

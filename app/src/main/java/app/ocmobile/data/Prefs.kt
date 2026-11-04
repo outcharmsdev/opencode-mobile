@@ -59,7 +59,7 @@ class Prefs(ctx: Context) {
     var mascotSleepy by bool("mascot_sleepy", true)          // dozes off if left alone for long
     var mascotMorning by bool("mascot_morning", true)
     var mascotSeasonal by bool("mascot_seasonal", true)      // snow, leaves, confetti, sneezes
-    var mascotOutfit by str("mascot_outfit", "auto")        // auto, off or a holiday name
+    var mascotOutfit by str("mascot_outfit", "off")         // auto, off or a holiday name
     var mascotPersona by bool("mascot_persona", true)       // the agent introduces itself as the cl0udly cloud
     var petCount by str("pet_count", "0")             // how many times the mascot was petted
     var lastMorning by str("last_morning", "")         // the day the mascot already did its morning stretch
