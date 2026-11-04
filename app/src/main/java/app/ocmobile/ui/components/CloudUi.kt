@@ -75,7 +75,7 @@ private val WHITE = Color(0xFFFFFFFF)
 private val GREY = Color(0xFFBABABC)
 internal val INK = Color(0xFF18181A)
 
-enum class CloudMood { Idle, Happy, Angry, Sleep, Love, Wink, Surprised, Dizzy, Drowsy }
+enum class CloudMood { Idle, Happy, Angry, Sleep, Love, Wink, Surprised, Dizzy, Drowsy, Rain }
 
 /**
  * A cloud in a box [w] wide (height by proportion), top left corner at [x], [y].
@@ -106,10 +106,10 @@ internal fun DrawScope.drawIconCloud(
     r(0f, 213f, 62f, CH, GREY)
     r(62f, 333f, 127f, CH, GREY)
 
-    val ew = 68f; val eh = 198f; val top = 110f + eyeDy * CW
+    val ew = 72f; val eh = 214f; val top = 110f + eyeDy * CW
     val dx = eyeDx * CW
     listOf(245f, 430f).forEachIndexed { i, ex0 ->
-        val ex = ex0 + if (mood == CloudMood.Idle || mood == CloudMood.Wink || mood == CloudMood.Surprised) dx else 0f
+        val ex = ex0 + if (mood == CloudMood.Idle || mood == CloudMood.Wink || mood == CloudMood.Surprised || mood == CloudMood.Rain) dx else 0f
         when (mood) {
             CloudMood.Idle -> {
                 val h = (eh * (1f - blink)).coerceAtLeast(26f)
@@ -129,13 +129,11 @@ internal fun DrawScope.drawIconCloud(
                 r(if (i == 0) ex else ex + 34f, top + 80f, if (i == 0) ex + 34f else ex + ew, top + 110f, WHITE)
             }
             CloudMood.Sleep -> r(ex - 10f, top + eh - 34f, ex + ew + 10f, top + eh, eye)
-            // being petted: "^" and lilac cheeks under the eyes
+            // being petted: "^" eyes (the cheeks are drawn after the loop)
             CloudMood.Love -> {
                 r(ex - 34f, top + 120f, ex + 4f, top + 158f, eye)
                 r(ex + 4f, top + 82f, ex + ew - 4f, top + 120f, eye)
                 r(ex + ew - 4f, top + 120f, ex + ew + 34f, top + 158f, eye)
-                val cx = if (i == 0) ex - 70f else ex + ew + 10f
-                r(cx, top + eh - 6f, cx + 60f, top + eh + 30f, Color(LILAC))
             }
             // wink: left "^", right open
             CloudMood.Wink -> if (i == 0) {
@@ -152,7 +150,18 @@ internal fun DrawScope.drawIconCloud(
             }
             // drowsy: eyelids half down
             CloudMood.Drowsy -> r(ex + dx, top + eh * 0.55f, ex + dx + ew, top + eh, eye)
+            // rain: closed lids and a lilac tear under each eye
+            CloudMood.Rain -> {
+                r(ex, top + eh - 34f, ex + ew, top + eh, eye)
+                r(ex + ew / 2 - 8f, top + eh + 10f, ex + ew / 2 + 8f, top + eh + 42f, Color(LILAC))
+            }
         }
+    }
+    // blush: soft lilac cheeks when it's happy, winking or being petted
+    if (mood == CloudMood.Happy || mood == CloudMood.Wink || mood == CloudMood.Love) {
+        val cy = top + eh - 4f
+        r(178f, cy, 238f, cy + 34f, Color(LILAC))
+        r(510f, cy, 570f, cy + 34f, Color(LILAC))
     }
 }
 
@@ -257,6 +266,13 @@ fun PixelCloud(modifier: Modifier, thinking: Boolean = false, interactive: Boole
 
     // a cue from outside (a new tour page): answers with a random reaction, like a tap
     LaunchedEffect(cue) { if (cue != null) { delay(250); tapReaction() } }
+    // a message just went out: a quick cheer with sparkles
+    LaunchedEffect(MascotSignals.celebrate) {
+        if (MascotSignals.celebrate == 0) return@LaunchedEffect
+        set(CloudMood.Happy, 1100); boing(0.8f)
+        scope.launch { jump.animateTo(-0.24f, tween(100)); jump.animateTo(0f, tween(120)) }
+        listOf(0.1f, 0.5f, 0.9f).forEachIndexed { i, x -> bit('s', x, i * 60L) }
+    }
     // hearts float up for ~0.9 s; the clock ticks only while they exist
     LaunchedEffect(hearts.isNotEmpty()) {
         while (hearts.isNotEmpty()) {
@@ -366,7 +382,11 @@ fun PixelCloud(modifier: Modifier, thinking: Boolean = false, interactive: Boole
 
     val frame = rememberSteps(if (thinking) 130 else 240)
     val t = rememberInfiniteTransition(label = "cloud")
-    val blinkT by t.animateFloat(0f, 1f, infiniteRepeatable(keyframes { durationMillis = 4400; 0f at 0; 0f at 4100; 1f at 4180; 1f at 4260; 0f at 4340 }), label = "blink")
+    val blinkT by t.animateFloat(0f, 1f, infiniteRepeatable(keyframes {
+        durationMillis = 5200
+        0f at 0; 0f at 3800; 1f at 3880; 1f at 3960; 0f at 4040
+        0f at 4400; 1f at 4480; 1f at 4560; 0f at 4640
+    }), label = "blink")
     // looks around rarely and calmly: every 12 seconds to the left, then right, and back
     val lookT by t.animateFloat(0f, 0f, infiniteRepeatable(keyframes {
         durationMillis = 12000
@@ -424,10 +444,23 @@ fun PixelCloud(modifier: Modifier, thinking: Boolean = false, interactive: Boole
                         val now = System.currentTimeMillis()
                         taps.addLast(now); while (taps.isNotEmpty() && now - taps.first() > 1800) taps.removeFirst()
                         haptic()
+                        // a tap low and to one side lands on a cheek
+                        val cheek = first.position.y > size.height * 0.45f &&
+                            (first.position.x < size.width * 0.4f || first.position.x > size.width * 0.6f)
                         when {
                             wasAsleep -> { taps.clear(); onReact?.invoke("wake"); set(CloudMood.Surprised, 900); scope.launch { jump.animateTo(-0.22f, tween(90)); jump.animateTo(0f, tween(110)); boing(0.8f) } }
                             taps.size >= 5 || mood == CloudMood.Angry -> { if (mood != CloudMood.Angry) onReact?.invoke("angry"); set(CloudMood.Angry, 2600); wobble(0.05f); boing() }
                             taps.size >= 2 && now - taps[taps.size - 2] < 320 -> { set(CloudMood.Wink, 1100); boing(0.9f) }
+                            cheek -> {
+                                onReact?.invoke("blush"); set(CloudMood.Love, 1500); boing(0.9f)
+                                heart(if (first.position.x < size.width / 2) 0.25f else 0.75f); bit('h', 0.5f, 110)
+                            }
+                            // a tap on the top puff makes it look up, curious
+                            first.position.y < size.height * 0.4f && first.position.x in size.width * 0.3f..size.width * 0.7f -> scope.launch {
+                                mood = CloudMood.Idle; bit('q', 0.82f)
+                                dartY.animateTo(-1f, tween(120)); dartX.animateTo(0.6f, tween(120)); delay(800)
+                                dartX.animateTo(0f, tween(120)); dartY.animateTo(0f, tween(120))
+                            }
                             else -> tapReaction()
                         }
                         return@awaitEachGesture
@@ -450,7 +483,8 @@ fun PixelCloud(modifier: Modifier, thinking: Boolean = false, interactive: Boole
                             turns++; run = 0f
                             if (turns >= 2) {
                                 if (mood != CloudMood.Love) { haptic(); onReact?.invoke("pet"); Graph.prefs.petCount = ((Graph.prefs.petCount.toIntOrNull() ?: 0) + 1).toString() }
-                                set(CloudMood.Love, 1600); heart()
+                                set(CloudMood.Love, 1800)
+                                heart(); bit('h', 0.25f, 90); bit('h', 0.75f, 180)
                             }
                         }
                         if (nd != dir) run = 0f
@@ -459,7 +493,7 @@ fun PixelCloud(modifier: Modifier, thinking: Boolean = false, interactive: Boole
                     touchLook = null
                     val v = vt.calculateVelocity()
                     when {
-                        turns >= 2 -> { heart(); heart() }
+                        turns >= 2 -> { heart(); bit('h', 0.3f, 80); bit('h', 0.7f, 160) }
                         // flicked up: a jump
                         v.y < -1400f && kotlin.math.abs(v.y) > kotlin.math.abs(v.x) -> scope.launch {
                             set(CloudMood.Happy, 900)
@@ -467,6 +501,14 @@ fun PixelCloud(modifier: Modifier, thinking: Boolean = false, interactive: Boole
                             jump.animateTo(-0.55f, tween(150, easing = androidx.compose.animation.core.LinearOutSlowInEasing))
                             jump.animateTo(0f, tween(140, easing = androidx.compose.animation.core.FastOutLinearInEasing))
                             boing(0.78f)
+                        }
+                        // pulled down: it turns into a rain cloud
+                        v.y > 1300f && kotlin.math.abs(v.y) > kotlin.math.abs(v.x) -> scope.launch {
+                            onReact?.invoke("rain")
+                            set(CloudMood.Rain, 1500)
+                            pullY.animateTo(0f, tween(60))
+                            listOf(0.2f, 0.35f, 0.5f, 0.65f, 0.8f).forEachIndexed { i, x -> bit('d', x, i * 60L) }
+                            delay(700)
                         }
                         else -> if (mood == CloudMood.Idle || mood == CloudMood.Surprised) set(CloudMood.Happy, 700)
                     }

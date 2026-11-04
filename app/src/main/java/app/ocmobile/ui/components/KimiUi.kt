@@ -454,9 +454,9 @@ fun KimiHero(code: Boolean, typing: Boolean = false, onMore: () -> Unit) {
     val c = Oc.c
     val name = Graph.prefs.userName.trim().substringBefore(' ')
     Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        if (Oc.look.id == "cloud") { if (Graph.prefs.mascotOn) PixelCloud(Modifier.size(width = 124.dp, height = 84.dp), watching = typing) }
+        if (Oc.look.id == "cloud") { if (Graph.prefs.mascotOn) PixelCloud(Modifier.size(width = 150.dp, height = 102.dp), watching = typing) }
         else KimiBall(Modifier.size(88.dp))
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(26.dp))
         // cl0udly: a new greeting every time
         val cloud = Oc.look.id == "cloud"
         val hello = remember(code, cloud) { if (cloud) Greetings.pick(name, code) else null }

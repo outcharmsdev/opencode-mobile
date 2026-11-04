@@ -2,6 +2,7 @@ package app.ocmobile.ui.components
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
@@ -14,8 +15,12 @@ import java.util.Calendar
 object MascotSignals {
     var listening by mutableStateOf(false)
     var level by mutableFloatStateOf(0f)
+    /** Bumped when a message goes out: the mascot cheers. */
+    var celebrate by mutableIntStateOf(0)
     /** Debug build only: `--es dev_holiday halloween` shows an outfit without waiting for the date. */
     var forced by mutableStateOf<Holiday?>(null)
+
+    fun cheer() { celebrate++ }
 }
 
 /**
@@ -113,6 +118,8 @@ object CloudTalk {
     val wake = listOf("I'm up! I'm up!", "Was I snoring?", "Huh? What did I miss?")
     val angry = listOf("Hey! Stop it!", "Grr.", "I'm a storm cloud now.", "Rude.")
     val dizzy = listOf("Whoa… the sky is spinning.", "Not the shaking!", "I feel like a tornado.")
+    val blush = listOf("Eep! My cheek.", "That's my face!", "Hehe, ticklish.", "Cheek boop.")
+    val rain = listOf("Now I'm a rain cloud.", "You made it rain.", "Wet pixels.", "Drizzle mode.")
     val idle = listOf(
         "Your task is still running. Wanna play?", "Did you know clouds weigh about 500 tonnes?", "I'd make it rain, but your phone is not waterproof.",
         "I'm 0% water, 100% pixels.", "Ping-pong? I'm undefeated. Mostly.", "Do you think the code is happy?", "I counted the stars. There are many.",
@@ -121,6 +128,7 @@ object CloudTalk {
     val lost = listOf("Lucky shot.", "Okay, okay, you got me.", "Rematch!", "I let you win.")
     fun of(event: String): String? = when (event) {
         "tap" -> tap; "pet" -> pet; "sleep" -> sleep; "wake" -> wake; "angry" -> angry; "dizzy" -> dizzy
+        "blush" -> blush; "rain" -> rain
         else -> null
     }?.random()
 

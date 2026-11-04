@@ -175,6 +175,7 @@ fun HomeScreen(nav: Nav, onMenu: () -> Unit, code: Boolean = false) {
                     val text = state.text.trim()
                     val atts = state.attachments.toList()
                     state.clear(); sending = true; flightText = text
+                    app.ocmobile.ui.components.MascotSignals.cheer()
                     scope.launch {
                         try {
                             val dir = if (code || Graph.devices.isRemote) Graph.prefs.currentDir else CHAT_DIR
