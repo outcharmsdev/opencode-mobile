@@ -1062,6 +1062,39 @@ fun MiniCloudIcon(size: androidx.compose.ui.unit.Dp) {
     }
 }
 
+/**
+ * The mascot as a companion: a small cloud that hovers above the send button.
+ * It sways on the spot and casts a soft shadow below; it looks down while you type
+ * and rains while the agent works.
+ */
+@Composable
+fun FloatingMascot(modifier: Modifier = Modifier, typing: Boolean = false, busy: Boolean = false) {
+    val t = rememberInfiniteTransition(label = "floating")
+    val bob by t.animateFloat(0f, 1f, infiniteRepeatable(
+        tween(2300, easing = androidx.compose.animation.core.FastOutSlowInEasing), RepeatMode.Reverse,
+    ), label = "bob")
+    val sway by t.animateFloat(-1f, 1f, infiniteRepeatable(
+        tween(3600, easing = androidx.compose.animation.core.FastOutSlowInEasing), RepeatMode.Reverse,
+    ), label = "sway")
+    Box(modifier) {
+        Canvas(Modifier.matchParentSize()) {
+            val sw = size.width * (0.42f - bob * 0.06f)
+            drawOval(
+                color = Color.Black.copy(alpha = 0.16f),
+                topLeft = Offset(size.width / 2 - sw / 2, size.height * 0.86f),
+                size = Size(sw, size.height * 0.07f),
+            )
+        }
+        PixelCloud(
+            Modifier.fillMaxSize().graphicsLayer {
+                translationY = -bob * 3.dp.toPx()
+                translationX = sway * 2.dp.toPx()
+            },
+            thinking = busy, watching = typing,
+        )
+    }
+}
+
 // ---------- anonymous chat ----------
 
 /**

@@ -291,6 +291,7 @@ fun ChatScreen(id: String, nav: Nav, onMenu: () -> Unit) {
                     val atts = state.attachments.toList()
                     val e = editing
                     state.clear(); stick = true; editing = null; sendingNow = true
+                    app.ocmobile.ui.components.MascotSignals.cheer()
                     scope.launch {
                         runCatching { if (e != null) hub.edit(ctx, id, e, text, atts) else hub.send(ctx, id, text, atts) }
                             .onFailure { hub.toasts.tryEmit(it.message ?: "Send failed") }

@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -167,6 +168,7 @@ fun ComposerHost(
     val known by Graph.catalog.commands.collectAsState()
     val names = remember(known) { known.map { it.name }.toSet() }
     val skillColors = remember(names, c.accent) { SkillHighlight(names, c.accent) }
+    Box(Modifier.fillMaxWidth()) {
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
             .animateContentSize(tween(140))
@@ -298,6 +300,14 @@ fun ComposerHost(
             }
         }
         }
+    }
+    // cl0udly: the mascot hovers above the send button, like a little companion
+    if (look == "cloud" && prefs.mascotOn && !dashed && !dict.active) {
+        FloatingMascot(
+            Modifier.align(Alignment.BottomEnd).offset(x = (-16).dp, y = (-63).dp).size(width = 56.dp, height = 36.dp),
+            typing = state.text.isNotEmpty(), busy = busy,
+        )
+    }
     }
 
     // message price before sending
